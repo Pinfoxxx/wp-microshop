@@ -11,7 +11,7 @@ def list_items():
         "item1",
         "item2",
         "item3",
-        ]
+    ]
 
 
 # It's important to use right order of endpoints, because if this endpoint was after "/items/{item_id}/", It will be processing by first endpoint and giving error 422, because dict != int
@@ -23,8 +23,4 @@ def get_latest_item():
 # Endpoint with type annotation
 @router.get("/{item_id}/")
 def get_item_by_id(item_id: Annotated[int, Path(ge=1, lt=1000000)]):
-    return {
-        "item": {
-            "id": item_id
-        }
-    }
+    return {"item": {"id": item_id}}
