@@ -1,3 +1,6 @@
+# ====== Database helper for working with SQLite ====== #
+
+
 from asyncio import current_task
 
 from sqlalchemy.ext.asyncio import (
@@ -33,12 +36,13 @@ class DatabaseHelper:
         )
         return session
 
-    # Creating method for working with async db
+    # Method for work with new session
     async def session_dependency(self) -> AsyncSession:
         async with self.session_factory() as conn:
             yield conn
             await conn.close()
 
+    # Method for work with scoped session
     async def scoped_session_dependency(self) -> AsyncSession:
         session = self.get_scoped_session()
         yield session

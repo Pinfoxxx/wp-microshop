@@ -1,3 +1,5 @@
+# ====== SQLAlchemy DeclarativeBase dependency for product.py ====== #
+
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 
 

@@ -1,3 +1,5 @@
+# ====== FastAPI endpoints / views ====== #
+
 from typing import Annotated
 
 from fastapi import APIRouter, Path
