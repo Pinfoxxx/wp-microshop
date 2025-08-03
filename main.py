@@ -7,7 +7,6 @@ from fastapi import FastAPI
 import uvicorn
 
 from core.config import settings
-from core.models import Base, db_helper
 from items_views import router as items_router
 from users.views import router as users_router
 from api_v1.products.views import router as router_v1
@@ -15,10 +14,7 @@ from api_v1.products.views import router as router_v1
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # The lifespan of main app
-    # Load the db engine
-    async with db_helper.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
+    ...
     yield
 
 
