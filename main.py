@@ -11,6 +11,7 @@ from items_views import router as items_router
 from users.views import router as users_router
 from api_v1.products.views import router as router_v1
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # The lifespan of main app
     ...
