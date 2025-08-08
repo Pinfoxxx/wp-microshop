@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models import db_helper, User, Profile, Post
+from core.models import db_helper, User, Profile, Post, Order, Product
 
 
 async def create_user(session: AsyncSession, username: str) -> User:
@@ -126,45 +126,142 @@ async def get_profiles_with_users_and_users_with_posts(session: AsyncSession):
         print(profile.user.posts)
 
 
-async def main():
+async def create_order(session: AsyncSession, promocode: str | None = None) -> Order:
+    order = Order(promocode=promocode)
+
+    session.add(order)
+    await session.commit()
+
+    return order
+
+
+async def create_product(
+    session: AsyncSession, name: str, description: str, price: int
+) -> Product:
+    product = Product(name=name, description=description, price=price)
+
+    session.add(product)
+    await session.commit()
+
+    return product
+
+
+async def create_products_with_orders(session: AsyncSession):
+    order_one = await create_order(session)
+    order_promo = await create_order(session, promocode="promo")
+
+    mouse = await create_product(
+        session,
+        "Mouse",
+        "Great gaming mouse",
+        price=123,
+    )
+    keyboard = await create_product(
+        session,
+        "Keyboard",
+        "Great gaming keyboard",
+        price=149,
+    )
+    display = await create_product(
+        session,
+        "Display",
+        "Office display",
+        price=299,
+    )
+
+    order_one = await session.scalar(
+        select(Order)
+        .where(Order.id == order_one.id)
+        .options(selectinload(Order.products)),
+    )
+    order_promo = await session.scalar(
+        select(Order)
+        .where(Order.id == order_promo.id)
+        .options(selectinload(Order.products)),
+    )
+
+    # Using append(), because we are using lists
+    order_one.products.append(mouse)
+    order_one.products.append(keyboard)
+    # order_promo.products.append(keyboard)
+    # order_promo.products.append(display)
+
+    order_promo.products = [keyboard, display]  # Or we can rewrite
+
+    await session.commit()
+
+
+async def get_orders_with_products(
+    session: AsyncSession,
+) -> list[Order]:
+    stmt = (
+        select(Order)
+        .options(
+            selectinload(Order.products),
+        )
+        .order_by(Order.id)
+    )
+    orders = await session.scalars(stmt)
+
+    return list(orders)
+
+
+# One-to-many and one-to-one relations def
+async def main_relations():
     async with (
         db_helper.session_factory() as session
     ):  # Open session from main.py. db_helper saved a lot of time
-        # await create_user(session=session, username="John")
-        # await create_user(session=session, username="Alice")
-        # await create_user(session=session, username="Sam")
-        # user_sam = await get_user_by_username(session=session, username="Sam")
-        # user_john = await get_user_by_username(session=session, username="John")
+        await create_user(session=session, username="John")
+        await create_user(session=session, username="Alice")
+        await create_user(session=session, username="Sam")
+        user_sam = await get_user_by_username(session=session, username="Sam")
+        user_john = await get_user_by_username(session=session, username="John")
         # user_bob = await get_user_by_username(session=session, username="Bob")
-        # await create_user_profile(
-        #     session=session,
-        #     user_id=user_john.id,
-        #     first_name='John',
-        # )
-        # await create_user_profile(
-        #     session=session,
-        #     user_id=user_sam.id,
-        #     first_name='Sam',
-        #     last_name='White',
-        # )
-        # await show_users_with_profiles(session=session)
-        # await create_posts(
-        #     session,
-        #     user_john.id,
-        #     "SQLA 2.0",
-        #     "SQLA Joins",
-        # )
-        # await create_posts(
-        #     session,
-        #     user_sam.id,
-        #     "FastAPI intro",
-        #     "FastAPI Advanced",
-        #     "FastAPI more",
-        # )
-        # await get_users_with_posts(session=session)
-        # await get_posts_with_authors(session=session)
-        # await get_users_with_posts_and_profiles(session=session)
+        await create_user_profile(
+            session=session,
+            user_id=user_john.id,
+            first_name="John",
+        )
+        await create_user_profile(
+            session=session,
+            user_id=user_sam.id,
+            first_name="Sam",
+            last_name="White",
+        )
+        await show_users_with_profiles(session=session)
+        await create_posts(
+            session,
+            user_john.id,
+            "SQLA 2.0",
+            "SQLA Joins",
+        )
+        await create_posts(
+            session,
+            user_sam.id,
+            "FastAPI intro",
+            "FastAPI Advanced",
+            "FastAPI more",
+        )
+        await get_users_with_posts(session=session)
+        await get_posts_with_authors(session=session)
+        await get_users_with_posts_and_profiles(session=session)
         await get_profiles_with_users_and_users_with_posts(session=session)
+
+
+# Many-to-many relations def
+async def demo_m2m(session: AsyncSession):
+    # await create_orders_and_products(session)     # Uncomment this if you want
+    orders = await get_orders_with_products(session)
+    for order in orders:
+        print(order.id, order.promocode, order.created_at, "products:")
+        for product in order.products:
+            print("-", product.id, product.name, product.price)
+
+
+async def main():
+    async with db_helper.session_factory() as session:
+        # await main_relations(session)     # Uncomment to call main_relations def
+        await demo_m2m(session)
 
 
 if __name__ == "__main__":
