@@ -5,10 +5,10 @@ from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
-from .order_product_association import order_product_association_table
 
 if TYPE_CHECKING:
     from .product import Product
+    from .order_product_association import OrderProductAssociation
 
 
 class Order(Base):
@@ -20,7 +20,12 @@ class Order(Base):
         default=datetime.now,  # WARNING!!! Don't user datetime.now like a callback (use without '()')
     )
     products: Mapped[list["Product"]] = relationship(
-        secondary=order_product_association_table,
+        secondary="order_product_association",
         back_populates="orders",
         # lazy="noload"     # This method is dangerous
+    )
+
+    # Association between Parent -> Association -> Child
+    products_details: Mapped[list["OrderProductAssociation"]] = relationship(
+        back_populates="order"
     )
