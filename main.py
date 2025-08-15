@@ -9,7 +9,7 @@ import uvicorn
 from core.config import settings
 from items_views import router as items_router
 from users.views import router as users_router
-from api_v1.products.views import router as router_v1
+from api_v1 import router as router_v1
 
 
 @asynccontextmanager
